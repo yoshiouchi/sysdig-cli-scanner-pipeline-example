@@ -1,0 +1,80 @@
+name: Build and Scan (Sysdig)
+
+on:
+  push:
+    branches: [ main, "feature/**", "fix/**" ]
+  pull_request:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+  checks: write
+
+env:
+  IMAGE_NAME: sysdig-cli-scanner-pipeline-example
+  IMAGE_TAG: ${{ github.sha }}
+  IMAGE_REF: ${{ github.repository }}:${{ github.sha }}
+  # Sysdig Secure URL (adjust to your region: us2, eu1, jp1, au1, etc.)
+  SYSDIG_SECURE_URL: https://au1.app.sysdig.com
+  # Token must be set as GitHub Secret
+  SYSDIG_SECURE_TOKEN: ${{ secrets.SYSDIG_SECURE_TOKEN }}
+  # Minimum severity to fail the scan (low|medium|high|critical)
+  SCAN_FAIL_ON: high
+  # Format for reports
+  SCAN_OUTPUT_FORMAT: sarif
+  SCAN_OUTPUT_FILE: results.sarif
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image (local only)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: |
+            local/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+
+      - name: Show built image
+        run: |
+          docker images | head -n 20
+          echo "Built: local/${IMAGE_NAME}:${IMAGE_TAG}"
+
+      - name: Download Sysdig CLI Scanner
+        run: |
+          curl -sSLf https://download.sysdig.com/scanning/sysdig-cli-scanner/latest/linux/amd64/sysdig-cli-scanner -o sysdig-cli-scanner
+          chmod +x sysdig-cli-scanner
+          ./sysdig-cli-scanner --version || true
+
+      - name: Save local image as tar (for VM mode)
+        run: |
+          docker save "local/${IMAGE_NAME}:${IMAGE_TAG}" -o image.tar
+          ls -lh image.tar
+
+      - name: Scan with Sysdig CLI Scanner (VM mode)
+        run: |
+          set -euo pipefail
+          ./sysdig-cli-scanner \
+            --vm \
+            --apiurl "${SYSDIG_SECURE_URL}" \
+            --console-log \
+            --format "${SCAN_OUTPUT_FORMAT}" \
+            --output "${SCAN_OUTPUT_FILE}" \
+            --fail-on "${SCAN_FAIL_ON}" \
+            docker-archive://image.tar
+
+      - name: Upload SARIF to GitHub Code Scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ env.SCAN_OUTPUT_FILE }}
+          category: sysdig-cli-scanner
