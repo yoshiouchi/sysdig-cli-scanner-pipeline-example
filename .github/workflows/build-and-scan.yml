@@ -63,6 +63,6 @@ jobs:
           SECURE_API_TOKEN=${{ env.SECURE_API_TOKEN }} \
           sysdig-cli-scanner \
             --apiurl ${{ env.SYSDIG_SECURE_URL }} \
-            docker://local/${IMAGE_NAME}:${IMAGE_TAG} \
             --policy="CLI Scanner on GitHub Actions" \
+            docker://local/${IMAGE_NAME}:${IMAGE_TAG} \
             || ${{ env.BYPASS_SCAN_FAIL }}
