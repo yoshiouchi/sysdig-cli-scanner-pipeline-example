@@ -15,7 +15,7 @@ COPY requirements.txt .
 
 # Install build deps only if needed for wheels (kept minimal here)
 RUN pip install --upgrade pip && \
-    pip wheel --no-deps --wheel-dir /wheels -r requirements.txt
+    pip wheel --wheel-dir /wheels -r requirements.txt
 
 # ---- Runtime stage ----
 FROM python:3.12-slim
