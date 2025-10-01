@@ -65,17 +65,8 @@ jobs:
 
       - name: Scan with Sysdig CLI Scanner (VM mode)
         run: |
-          set -euo pipefail
-          sysdig-cli-scanner --version || true
           SECURE_API_TOKEN=${{ env.SECURE_API_TOKEN }} \
           sysdig-cli-scanner \
             --apiurl ${{ env.SYSDIG_SECURE_URL }}" \
             docker-archive://image.tar \
             || ${{ env.BYPASS_SCAN_FAIL }}
-
-      - name: Upload SARIF to GitHub Code Scanning
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: ${{ env.SCAN_OUTPUT_FILE }}
-          category: sysdig-cli-scanner
