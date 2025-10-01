@@ -1,0 +1,68 @@
+name: Build and Scan (Sysdig)
+
+on:
+  push:
+    branches: [ main, "feature/**", "fix/**" ]
+  pull_request:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+  checks: write
+
+env:
+  IMAGE_NAME: sysdig-cli-scanner-pipeline-example
+  IMAGE_TAG: ${{ github.sha }}
+  IMAGE_REF: ${{ github.repository }}:${{ github.sha }}
+  # Sysdig Secure URL (adjust to your region: us2, eu1, jp1, au1, etc.)
+  SYSDIG_SECURE_URL: https://app.au1.sysdig.com
+  # Token must be set as GitHub Secret
+  SECURE_API_TOKEN: ${{ secrets.SECURE_API_TOKEN }}
+  # Set BYPASS_SCAN_FAIL to true if you want to forcibly pass the pipeline scan result
+  BYPASS_SCAN_FAIL: false
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image (local only)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: |
+            local/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+
+      - name: Show built image
+        run: |
+          docker images | head -n 20
+          echo "Built: local/${IMAGE_NAME}:${IMAGE_TAG}"
+
+      - name: Validate Sysdig token
+        if: ${{ env.SECURE_API_TOKEN == '' }}
+        run: |
+          echo "SECURE_API_TOKEN is not set. Add it in Settings > Secrets > Actions."
+          exit 1
+
+      - name: Download Sysdig CLI Scanner
+        run: |
+          curl -LO "https://download.sysdig.com/scanning/bin/sysdig-cli-scanner/$(curl -L -s https://download.sysdig.com/scanning/sysdig-cli-scanner/latest_version.txt)/linux/amd64/sysdig-cli-scanner"
+          chmod +x ./sysdig-cli-scanner
+          sudo mv ./sysdig-cli-scanner /usr/local/bin/
+
+      - name: Scan with Sysdig CLI Scanner
+        run: |
+          SECURE_API_TOKEN=${{ env.SECURE_API_TOKEN }} \
+          sysdig-cli-scanner \
+            --apiurl ${{ env.SYSDIG_SECURE_URL }} \
+            --policy=cli-scanner-on-github-actions \
+            docker://local/${IMAGE_NAME}:${IMAGE_TAG} \
+            || ${{ env.BYPASS_SCAN_FAIL }}

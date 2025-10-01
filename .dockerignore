@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Venvs
+.venv/
+env/
+venv/
+
+# Git / IDE / OS
+.git/
+.gitignore
+.vscode/
+.DS_Store
+
+# Local artifacts
+*.log
