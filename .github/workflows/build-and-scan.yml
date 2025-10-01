@@ -57,9 +57,9 @@ jobs:
 
       - name: Download Sysdig CLI Scanner
         run: |
-          curl -sSLf https://download.sysdig.com/scanning/sysdig-cli-scanner/latest/linux/amd64/sysdig-cli-scanner -o sysdig-cli-scanner
-          chmod +x sysdig-cli-scanner
-          ./sysdig-cli-scanner --version || true
+          curl -LO "https://download.sysdig.com/scanning/bin/sysdig-cli-scanner/$(curl -L -s https://download.sysdig.com/scanning/sysdig-cli-scanner/latest_version.txt)/linux/amd64/sysdig-cli-scanner"
+          chmod +x ./sysdig-cli-scanner
+          sudo mv ./sysdig-cli-scanner /usr/local/bin/
 
       - name: Save local image as tar (for VM mode)
         run: |
