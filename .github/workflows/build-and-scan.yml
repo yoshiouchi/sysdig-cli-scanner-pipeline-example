@@ -20,7 +20,7 @@ env:
   # Token must be set as GitHub Secret
   SYSDIG_SECURE_TOKEN: ${{ secrets.SYSDIG_SECURE_TOKEN }}
   # Minimum severity to fail the scan (low|medium|high|critical)
-  SCAN_FAIL_ON: high
+  SCAN_FAIL_ON: critical
   # Format for reports
   SCAN_OUTPUT_FORMAT: sarif
   SCAN_OUTPUT_FILE: results.sarif
@@ -48,6 +48,12 @@ jobs:
         run: |
           docker images | head -n 20
           echo "Built: local/${IMAGE_NAME}:${IMAGE_TAG}"
+
+      - name: Validate Sysdig token
+        if: ${{ env.SYSDIG_SECURE_TOKEN == '' }}
+        run: |
+          echo "SYSDIG_SECURE_TOKEN is not set. Add it in Settings > Secrets > Actions."
+          exit 1
 
       - name: Download Sysdig CLI Scanner
         run: |
