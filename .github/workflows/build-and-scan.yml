@@ -19,11 +19,8 @@ env:
   SYSDIG_SECURE_URL: https://au1.app.sysdig.com
   # Token must be set as GitHub Secret
   SYSDIG_SECURE_TOKEN: ${{ secrets.SYSDIG_SECURE_TOKEN }}
-  # Minimum severity to fail the scan (low|medium|high|critical)
-  SCAN_FAIL_ON: critical
-  # Format for reports
-  SCAN_OUTPUT_FORMAT: sarif
-  SCAN_OUTPUT_FILE: results.sarif
+  # Set BYPASS_SCAN_FAIL to true if you want to forcibly pass the pipeline scan result
+  BYPASS_SCAN_FAIL: false
 
 jobs:
   build-and-scan:
@@ -69,14 +66,13 @@ jobs:
       - name: Scan with Sysdig CLI Scanner (VM mode)
         run: |
           set -euo pipefail
-          ./sysdig-cli-scanner \
-            --vm \
+          sysdig-cli-scanner --version || true
+          SYSDIG_SECURE_TOKEN="${SYSDIG_SECURE_TOKEN}" \
+          sysdig-cli-scanner \
             --apiurl "${SYSDIG_SECURE_URL}" \
             --console-log \
-            --format "${SCAN_OUTPUT_FORMAT}" \
-            --output "${SCAN_OUTPUT_FILE}" \
-            --fail-on "${SCAN_FAIL_ON}" \
-            docker-archive://image.tar
+            docker-archive://image.tar \
+            || ${{ env.BYPASS_SCAN_FAIL }}
 
       - name: Upload SARIF to GitHub Code Scanning
         if: always()
