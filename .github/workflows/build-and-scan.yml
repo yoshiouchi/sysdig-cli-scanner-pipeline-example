@@ -69,8 +69,7 @@ jobs:
           sysdig-cli-scanner --version || true
           SECURE_API_TOKEN=${{ env.SECURE_API_TOKEN }} \
           sysdig-cli-scanner \
-            --apiurl "${SYSDIG_SECURE_URL}" \
-            --console-log \
+            --apiurl ${{ env.SYSDIG_SECURE_URL }}" \
             docker-archive://image.tar \
             || ${{ env.BYPASS_SCAN_FAIL }}
 
