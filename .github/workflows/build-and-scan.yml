@@ -58,15 +58,10 @@ jobs:
           chmod +x ./sysdig-cli-scanner
           sudo mv ./sysdig-cli-scanner /usr/local/bin/
 
-      - name: Save local image as tar (for VM mode)
-        run: |
-          docker save "local/${IMAGE_NAME}:${IMAGE_TAG}" -o image.tar
-          ls -lh image.tar
-
       - name: Scan with Sysdig CLI Scanner (VM mode)
         run: |
           SECURE_API_TOKEN=${{ env.SECURE_API_TOKEN }} \
           sysdig-cli-scanner \
             --apiurl ${{ env.SYSDIG_SECURE_URL }} \
-            docker-archive://image.tar \
+            docker://local/${IMAGE_NAME}:${IMAGE_TAG} \
             || ${{ env.BYPASS_SCAN_FAIL }}
