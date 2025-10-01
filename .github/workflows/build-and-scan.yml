@@ -67,7 +67,7 @@ jobs:
         run: |
           set -euo pipefail
           sysdig-cli-scanner --version || true
-          SECURE_API_TOKEN="${SECURE_API_TOKEN}" \
+          SECURE_API_TOKEN=${{ env.SECURE_API_TOKEN }} \
           sysdig-cli-scanner \
             --apiurl "${SYSDIG_SECURE_URL}" \
             --console-log \
