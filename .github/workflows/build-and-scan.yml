@@ -58,11 +58,11 @@ jobs:
           chmod +x ./sysdig-cli-scanner
           sudo mv ./sysdig-cli-scanner /usr/local/bin/
 
-      - name: Scan with Sysdig CLI Scanner (VM mode)
+      - name: Scan with Sysdig CLI Scanner
         run: |
           SECURE_API_TOKEN=${{ env.SECURE_API_TOKEN }} \
           sysdig-cli-scanner \
             --apiurl ${{ env.SYSDIG_SECURE_URL }} \
-            --policy=cli-scanner-on-github-actions" \
+            --policy=cli-scanner-on-github-actions \
             docker://local/${IMAGE_NAME}:${IMAGE_TAG} \
             || ${{ env.BYPASS_SCAN_FAIL }}
